@@ -2,42 +2,73 @@
 <html>
 <head>
   <title>VIBEOUT</title>
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net;">
+  <!-- CSP Aggiornata -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' 'unsafe-eval' 'unsafe-inline' 
+    https://cdn.jsdelivr.net 
+    https://cdnjs.cloudflare.com;
+    img-src data:;
+  ">
+  
+  <!-- Caricamento Script in Ordine Corretto -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@2.1.0/build/webxr-polyfill.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <script>
+    // Inizializzazione scena Three.js
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     
-    // Setup di base
+    // Configurazione renderer
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000); // Sfondo nero
     document.body.appendChild(renderer.domElement);
-    
-    // Cubo verde
+
+    // Cubo verde con illuminazione
     const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const material = new THREE.MeshPhongMaterial({ 
+      color: 0x00ff00,
+      shininess: 100 
+    });
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
+
+    // Luce ambientale
+    const light = new THREE.PointLight(0xffffff, 1, 100);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+
     camera.position.z = 5;
 
-    // Inizializza WebXR
-    const polyfill = new WebXRPolyfill(); // Polyfill per browser non compatibili
+    // Inizializzazione WebXR con polyfill
+    const polyfill = new WebXRPolyfill(); // Ora dovrebbe essere definito
     renderer.xr.enabled = true;
 
-    // Avvia sessione al click
-    renderer.domElement.addEventListener('click', async () => {
-      const session = await navigator.xr.requestSession("immersive-vr");
-      await renderer.xr.setSession(session);
-      renderer.setAnimationLoop(() => {
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
-        renderer.render(scene, camera);
-      });
-    });
+    // Gestione errori robusta
+    async function startXR() {
+      try {
+        const session = await navigator.xr.requestSession("immersive-vr");
+        await renderer.xr.setSession(session);
+        
+        renderer.setAnimationLoop(() => {
+          cube.rotation.x += 0.02;
+          cube.rotation.y += 0.01;
+          renderer.render(scene, camera);
+        });
+        
+      } catch (error) {
+        console.error("Errore XR:", error);
+        document.body.innerHTML = `<h1 style="color:white">Abilita WebXR nelle impostazioni del browser!</h1>`;
+      }
+    }
+
+    // Avvio al click + feedback visivo
+    renderer.domElement.style.cursor = 'pointer';
+    renderer.domElement.addEventListener('click', startXR);
+    renderer.render(scene, camera); // Render iniziale
   </script>
 </body>
 </html>
