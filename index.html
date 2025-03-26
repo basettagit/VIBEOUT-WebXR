@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>VIBEOUT</title>
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net;">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@2.1.0/build/webxr-polyfill.min.js"></script>
   <link rel="stylesheet" href="style.css">
@@ -9,33 +10,34 @@
 <body>
   <script>
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     
+    // Setup di base
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
-
-    // Esempio: Cubo verde rotante
+    
+    // Cubo verde
     const geometry = new THREE.BoxGeometry();
     const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
     camera.position.z = 5;
 
-    // Abilita WebXR
+    // Inizializza WebXR
+    const polyfill = new WebXRPolyfill(); // Polyfill per browser non compatibili
     renderer.xr.enabled = true;
-    new WebXRPolyfill(); // Attiva il polyfill per browser non compatibili
 
-    async function startXR() {
-      await renderer.xr.setSession(await navigator.xr.requestSession("immersive-vr"));
+    // Avvia sessione al click
+    renderer.domElement.addEventListener('click', async () => {
+      const session = await navigator.xr.requestSession("immersive-vr");
+      await renderer.xr.setSession(session);
       renderer.setAnimationLoop(() => {
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
         renderer.render(scene, camera);
       });
-    }
-
-    document.querySelector('canvas').addEventListener('click', startXR);
+    });
   </script>
 </body>
 </html>
